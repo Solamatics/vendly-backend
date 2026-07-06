@@ -1,0 +1,254 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum Plan {
+  FREE
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum PaymentStatus {
+  PAID
+  CREDIT
+  PARTIAL
+}
+
+enum StockMovementType {
+  SALE
+  RESTOCK
+  ADJUSTMENT
+}
+
+model Business {
+  id               String           @id @default(cuid())
+  name             String
+  email            String           @unique
+  phone            String?
+  address          String?
+  logo             String?
+  plan             Plan             @default(FREE)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  users            User[]
+  products         Product[]
+  sales            Sale[]
+  expenses         Expense[]
+  customers        Customer[]
+  stockMovements   StockMovement[]
+  monthlySummaries MonthlySummary[]
+  suppliers        Supplier[]
+  invoices         Invoice[]
+  branches         Branch[]
+  notifications    Notification[]
+}
+
+model Branch {
+  id         String    @id @default(cuid())
+  name       String
+  address    String?
+  business   Business  @relation(fields: [businessId], references: [id])
+  businessId String
+  createdAt  DateTime  @default(now())
+  users      User[]
+  sales      Sale[]
+  products   Product[]
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  password       String?
+  name           String?
+  phone          String?
+  role           Role          @default(STAFF)
+  business       Business      @relation(fields: [businessId], references: [id])
+  businessId     String
+  branch         Branch?       @relation(fields: [branchId], references: [id])
+  branchId       String?
+  inviteToken    String?       @unique
+  inviteAccepted Boolean       @default(false)
+  lastLoginAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  sales          Sale[]
+  activityLogs   ActivityLog[]
+}
+
+model Customer {
+  id            String        @id @default(cuid())
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  totalSpent    Float         @default(0)
+  loyaltyPoints Int           @default(0)
+  business      Business      @relation(fields: [businessId], references: [id])
+  businessId    String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  sales         Sale[]
+  debtPayments  DebtPayment[]
+}
+
+model Supplier {
+  id         String    @id @default(cuid())
+  name       String
+  phone      String?
+  email      String?
+  address    String?
+  business   Business  @relation(fields: [businessId], references: [id])
+  businessId String
+  createdAt  DateTime  @default(now())
+  expenses   Expense[]
+}
+
+model Product {
+  id             String          @id @default(cuid())
+  name           String
+  unit           String
+  sellingPrice   Float           @default(0)
+  costPrice      Float           @default(0)
+  lowStockAlert  Int             @default(5)
+  currentStock   Int             @default(0)
+  business       Business        @relation(fields: [businessId], references: [id])
+  businessId     String
+  branch         Branch?         @relation(fields: [branchId], references: [id])
+  branchId       String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  sales          Sale[]
+  stockMovements StockMovement[]
+
+  @@unique([name, businessId])
+}
+
+model Sale {
+  id            String        @id @default(cuid())
+  product       Product       @relation(fields: [productId], references: [id])
+  productId     String
+  customer      Customer?     @relation(fields: [customerId], references: [id])
+  customerId    String?
+  recordedBy    User          @relation(fields: [userId], references: [id])
+  userId        String
+  business      Business      @relation(fields: [businessId], references: [id])
+  businessId    String
+  branch        Branch?       @relation(fields: [branchId], references: [id])
+  branchId      String?
+  quantity      Int
+  unitPrice     Float
+  costPrice     Float         @default(0)
+  total         Float
+  amountPaid    Float         @default(0)
+  balance       Float         @default(0)
+  paymentStatus PaymentStatus @default(PAID)
+  note          String?
+  date          DateTime
+  createdAt     DateTime      @default(now())
+  invoice       Invoice?
+  debtPayments  DebtPayment[]
+}
+
+model DebtPayment {
+  id         String   @id @default(cuid())
+  sale       Sale     @relation(fields: [saleId], references: [id])
+  saleId     String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  amount     Float
+  note       String?
+  date       DateTime @default(now())
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  category    String
+  description String?
+  amount      Float
+  date        DateTime
+  supplier    Supplier? @relation(fields: [supplierId], references: [id])
+  supplierId  String?
+  business    Business  @relation(fields: [businessId], references: [id])
+  businessId  String
+  createdAt   DateTime  @default(now())
+}
+
+model StockMovement {
+  id         String            @id @default(cuid())
+  product    Product           @relation(fields: [productId], references: [id])
+  productId  String
+  business   Business          @relation(fields: [businessId], references: [id])
+  businessId String
+  type       StockMovementType
+  quantity   Int
+  note       String?
+  date       DateTime          @default(now())
+}
+
+model Invoice {
+  id         String   @id @default(cuid())
+  invoiceNo  String
+  sale       Sale     @relation(fields: [saleId], references: [id])
+  saleId     String   @unique
+  business   Business @relation(fields: [businessId], references: [id])
+  businessId String
+  pdfUrl     String?
+  createdAt  DateTime @default(now())
+}
+
+model MonthlySummary {
+  id           String   @id @default(cuid())
+  year         Int
+  month        Int
+  totalRevenue Float    @default(0)
+  totalExpense Float    @default(0)
+  netProfit    Float    @default(0)
+  grossProfit  Float    @default(0)
+  totalSales   Int      @default(0)
+  business     Business @relation(fields: [businessId], references: [id])
+  businessId   String
+  updatedAt    DateTime @updatedAt
+
+  @@unique([year, month, businessId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  business   Business @relation(fields: [businessId], references: [id])
+  businessId String
+  title      String
+  message    String
+  type       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
