@@ -129,4 +129,34 @@ export class AuthService {
 
     return { accessToken, refreshToken };
   }
+
+  async refresh(refreshToken: string) {
+    try {
+      const payload = await this.jwt.verifyAsync<{
+        sub: string;
+        businessId: string;
+        role: string;
+      }>(refreshToken, {
+        secret: this.config.get<string>('JWT_REFRESH_SECRET'),
+      });
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+      });
+
+      if (!user) throw new UnauthorizedException();
+
+      const accessToken = await this.jwt.signAsync(
+        { sub: user.id, businessId: user.businessId, role: user.role },
+        {
+          secret: this.config.get<string>('JWT_ACCESS_SECRET'),
+          expiresIn: '15m',
+        },
+      );
+
+      return { accessToken };
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
 }
