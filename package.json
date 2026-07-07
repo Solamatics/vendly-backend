@@ -2,6 +2,7 @@
   "name": "vendly-api",
   "version": "0.0.1",
   "description": "",
+  "packageManager": "pnpm@10.33.0",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
