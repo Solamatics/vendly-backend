@@ -4,6 +4,7 @@ import { ExpensesController } from './expenses.controller';
 
 @Module({
   providers: [ExpensesService],
-  controllers: [ExpensesController]
+  controllers: [ExpensesController],
+  exports: [ExpensesService],
 })
 export class ExpensesModule {}
