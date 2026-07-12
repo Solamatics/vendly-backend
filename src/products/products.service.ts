@@ -54,7 +54,7 @@ export class ProductsService {
 
   async findAll(businessId: string) {
     const products = await this.prisma.product.findMany({
-      where: { businessId },
+      where: { businessId, isActive: true },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -63,7 +63,7 @@ export class ProductsService {
 
   async findOne(businessId: string, id: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id, businessId },
+      where: { id, businessId, isActive: true },
       include: {
         stockMovements: {
           orderBy: { date: 'desc' },
@@ -73,7 +73,6 @@ export class ProductsService {
     });
 
     if (!product) throw new NotFoundException('Product not found');
-
     return product;
   }
 
@@ -108,12 +107,25 @@ export class ProductsService {
   async remove(businessId: string, id: string) {
     const product = await this.prisma.product.findFirst({
       where: { id, businessId },
+      include: { _count: { select: { sales: true } } },
     });
 
     if (!product) throw new NotFoundException('Product not found');
 
-    await this.prisma.product.delete({ where: { id } });
+    // If product has sales, soft delete instead
+    if (product._count.sales > 0) {
+      await this.prisma.product.update({
+        where: { id },
+        data: { isActive: false },
+      });
+      return {
+        message:
+          'Product deactivated. It will no longer appear in your inventory but sales history is preserved.',
+      };
+    }
 
+    // No sales — safe to hard delete
+    await this.prisma.product.delete({ where: { id } });
     return { message: 'Product deleted successfully' };
   }
 

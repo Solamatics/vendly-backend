@@ -130,6 +130,7 @@ model Product {
   costPrice      Float           @default(0)
   lowStockAlert  Int             @default(5)
   currentStock   Int             @default(0)
+  isActive       Boolean         @default(true)
   business       Business        @relation(fields: [businessId], references: [id])
   businessId     String
   branch         Branch?         @relation(fields: [branchId], references: [id])
