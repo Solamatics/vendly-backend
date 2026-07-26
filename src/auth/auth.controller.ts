@@ -13,6 +13,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GetUser } from './decorators/get-user.decorator';
 import type { JwtPayload } from './types/jwt-payload.type';
 
+//controller for authentication routes
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
