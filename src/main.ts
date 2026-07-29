@@ -13,6 +13,7 @@ async function bootstrap() {
     }),
   );
 
+  //cors set up
   app.enableCors({
     origin: [
       'http://localhost:3000',
