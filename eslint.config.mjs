@@ -18,8 +18,15 @@ export default tseslint.config(
         ...globals.jest,
       },
       sourceType: 'commonjs',
+      // parserOptions: {
+      //   projectService: true,
+      //   tsconfigRootDir: import.meta.dirname,
+      // },
       parserOptions: {
-        projectService: true,
+        // projectService: {
+        //   allowDefaultProject: ['test/*.ts'],
+        // },
+        project: './tsconfig.eslint.json',
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -29,7 +36,7 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      "prettier/prettier": ["error", { endOfLine: "auto" }],
+      'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
   },
 );
